@@ -1,0 +1,65 @@
+{% set conf = jsonobj -%}
+
+{% if conf['fabric']['common']['intmgtnet'] is defined and conf['fabric']['common']['intmgtnet'] -%}
+{% set x = conf['fabric']['common']['intmgtnet'].split(".") -%}
+{% set agw = x[0]+'.'+x[1]+'.'+x[2]+'.'+conf['fabric']['common']['ipv4gw']|string+'/'+conf['fabric']['common']['ipv4mask']|string -%}
+{% endif -%}
+
+ansible_httpapi_use_ssl: true
+ansible_httpapi_validate_certs: false
+ansible_network_os: dellemc.enterprise_sonic.sonic
+ansible_password: YourPaSsWoRd
+ansible_user: admin
+bgp_asn: '{{ '{{ host_data[inventory_hostname].bgp_asn }}' }}'
+bgp_router_id: '{{ '{{ host_data[inventory_hostname].bgp_router_id }}' }}'
+dns_servers:
+  - 10.204.0.251
+mgmt_gateway_ip: '{{ '{{ host_data[inventory_hostname].mgmt_gateway_ip }}' }}'
+mgmt_ip: '{{ '{{ host_data[inventory_hostname].mgmt_ip }}' }}'
+loopback0_ip: '{{ '{{ host_data[inventory_hostname].loopback0_ip }}' }}'
+loopback_inf0: Loopback0
+loopback_inf1: Loopback1
+ntp_servers:
+  - 10.204.9.254
+sonic_bgp_fabriclink_neighbors_aflist:
+  - activate: true
+    afi: ipv4
+    allowas_in:
+      value: 2
+    safi: unicast
+  - activate: true
+    afi: l2vpn
+    safi: evpn
+
+sonic_bgp_spineleaf_peergroup:
+  name: spine-leaf
+  address_family:
+    afis:
+      - activate: true
+        afi: ipv4
+        safi: unicast
+      - activate: true
+        afi: l2vpn
+        safi: evpn
+  advertisement_interval: 5
+  bfd:
+    enabled: true
+  capability:
+    extended_nexthop: true
+  remote_as:
+    peer_type: external
+  timers:
+    holdtime: 9
+    keepalive: 3
+
+vlan_info:
+  {{conf['fabric']['common']['L3VRFvlan']}}:
+    vni: {{conf['fabric']['common']['L3VRFvlan']}}{{conf['fabric']['common']['L3VRFvlan']}}
+    vrf: {{conf['fabric']['common']['L3VRF']}}
+  {{conf['fabric']['common']['intmgtvlan']}}:
+    anycast_gateway_ip: {{ agw }}
+    neigh_suppress: true
+    vni: {{conf['fabric']['common']['intmgtvlan']}}{{conf['fabric']['common']['intmgtvlan']}}
+    vrf: {{conf['fabric']['common']['L3VRF']}}
+
+host_data:

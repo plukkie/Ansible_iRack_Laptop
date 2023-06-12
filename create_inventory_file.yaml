@@ -1,0 +1,66 @@
+---
+
+- hosts: localhost
+  connection: httpapi
+  gather_facts: false
+  collections:
+    - dellemc.enterprise_sonic
+
+  vars:
+    jenkinsgit: https://github.com/plukkie/Jenkins_CICD_Pipeline_SONiC_Fabric_Laptop.git
+    jenkinsdir: ./jenkinsgit
+    settingsfile: settings.json
+    host_vars_dir: host_vars
+    group_vars_dir: group_vars
+    inventoryfile: hosts
+    backupextension: .bak
+
+
+  tasks:
+
+    - name: Check if inventoryfile '['{{ inventoryfile }}']' exists
+      stat:
+        path: "{{ inventoryfile }}"
+      register: fileresult
+
+    - name: Fetch Git {{ jenkinsgit }}
+      delegate_to: localhost
+      run_once: true
+      git:
+        repo: "{{ jenkinsgit }}"
+        dest: "{{ jenkinsdir }}"
+
+        #- name: Create inventory file
+        #delegate_to: localhost
+
+
+    - name: Display JSON {{ settingsfile }}
+      delegate_to: localhost
+      run_once: true
+      shell: cat {{ jenkinsdir }}"/"{{ settingsfile }}
+      register: settingsobj
+
+
+    - name: Store JSON data to variable
+      delegate_to: localhost
+      run_once: true
+      set_fact:
+        jsonobj: "{{ settingsobj.stdout | from_json }}"
+
+    #- debug:
+    #    msg: "{{ jsonobj }}"
+
+        #- name: Copy {{ inventoryfile }} to {{ inventoryfile }}{{ backupextension }}
+        #ansible.builtin.copy:
+        #src: '{{ inventoryfile }}'
+        #dest: '{{ inventoryfile }}{{ backupextension }}'
+        #force: true
+        #when: not fileresult.stat.exists
+
+    - name: Create inventory file {{ inventoryfile }}
+      delegate_to: localhost
+      template:
+        src: templates/create_inventory_file.j2
+        dest: "{{ inventoryfile }}"
+      when: not fileresult.stat.exists
+

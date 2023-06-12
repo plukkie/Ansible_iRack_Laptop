@@ -1,0 +1,20 @@
+{
+   "ztp":{
+
+      "configdb-json": {
+         "url": {
+            "source": "http://10.10.10.201/tftpboot/sonic/config/first_boot_config_gns3.json",
+            "destination": "/etc/sonic/config_db.json",
+            "secure": false
+         },
+         "clear-config" : false
+      },
+      "provisioning-script": {
+          "plugin": {
+            "url":"http://10.10.10.201/tftpboot/sonic/postscript/postscript_gns3_dev_fabric.sh"
+           },
+           "reboot-on-success": false
+      }
+   }
+}
+

@@ -1,0 +1,67 @@
+{% set conf = jsonobj %}
+{% set global = { } %}
+{% if 'leaf' in inventory_hostname|lower %}
+{% set role = 'leaf' %}
+{% elif 'spine' in inventory_hostname|lower %}
+{% set role = 'spine' %}
+{% endif %}
+{% set nameprefix = conf['fabric'][role]['nameprefix'] %}
+{% set switchnr = inventory_hostname[nameprefix|length:]|int %}
+{% if 'dhcpsource' in conf['fabric'][role] %}
+{% if conf['fabric'][role]['dhcpsource']|length > 7 %}
+{% set dhcpsrcarray = conf['fabric'][role]['dhcpsource'].split(".") -%}
+{% set dhcpsrc = dhcpsrcarray[0]+'.'+dhcpsrcarray[1]+'.'+dhcpsrcarray[2]+'.'+(dhcpsrcarray[3]|int-1+switchnr)|string %}
+{% endif %}
+{% endif %}
+{% if 'vtepip' in conf['fabric'][role] %}
+{% if conf['fabric'][role]['vtepip']|length > 7 %}
+{% if switchnr is even %}
+{% set vtep = switchnr-1 %}
+{% else %}
+{% set vtep = switchnr %}
+{% endif %}
+{% set vtepiparray = conf['fabric'][role]['vtepip'].split(".") -%}
+{% set vtepnet = vtepiparray[0]+'.'+vtepiparray[1]+'.'+vtepiparray[2]+'.' %}
+{% endif %}
+{% endif %}
+{% set ridarray = conf['fabric'][role]['routerid'].split(".") -%}
+{% set rid = ridarray[0]+'.'+ridarray[1]+'.'+ridarray[2]+'.'+(ridarray[3]|int-1+switchnr)|string %}
+{% set startas = conf['fabric'][role]['as']|int %}
+{% set switchcount = conf['gns3']['nodesdata']['templates'][role]['count']|int %}
+{% set switchpairs = switchcount/2 %}
+{% for count in range(switchpairs|int) %}
+{% set pairnr = count+1 %}
+{% if pairnr*2 == switchnr -%} 
+{% set as = startas+count %}
+{% set mclagpeerip = ridarray[0]+'.'+ridarray[1]+'.'+ridarray[2]+'.'+(ridarray[3]|int-1+switchnr-1)|string %}
+{% if vtepiparray is defined %}
+{% set vtepip = vtepiparray[3]|int+count %}
+{{ global.update ( { 'vtepip' : vtepip } ) -}}
+{% endif %}
+{{ global.update ({ 'as' : as, 'mclagpeer' : mclagpeerip }) -}}
+{% elif pairnr*2-1 == switchnr -%}
+{% if vtepiparray is defined %}
+{% set vtepip =  vtepiparray[3]|int+count %}
+{{ global.update ( { 'vtepip' : vtepip  } ) -}}
+{% endif %}
+{% set as = startas+count %}
+{% set mclagpeerip = ridarray[0]+'.'+ridarray[1]+'.'+ridarray[2]+'.'+(ridarray[3]|int-1+switchnr+1)|string %}
+{{ global.update ({ 'as' : as, 'mclagpeer' : mclagpeerip }) -}}
+{% endif -%}
+{% endfor %}
+  {{ inventory_hostname }}:
+     bgp_asn: {{ global.as }}
+     bgp_router_id: {{ rid }}
+     loopback0_ip: {{ rid }}/32
+{% if dhcpsrc is defined %}
+     ipdhcp_loopback_ip: {{ dhcpsrc }}/32
+{% endif %}
+{% if vtepnet is defined %}
+     loopback1_ip: {{ vtepnet }}{{ global.vtepip }}/32
+{% endif %}
+{% if global.mclagpeer is defined %}
+     mclag_peer_ip: {{ global.mclagpeer }}
+{% endif %}
+{% if vtep is defined %}
+     vtep_name: vtep{{ vtep }}
+{% endif %}

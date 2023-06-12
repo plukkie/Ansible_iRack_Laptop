@@ -1,0 +1,23 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+{#######################################
+
+Purpose:
+Custom configuration for SONiC devices
+#########################################}
+
+#mac address-table aging-time 120
+
+{%for lacp_pc in lacp_pcs%}
+interface PortChannel {{lacp_pc}} mode active fallback
+{%endfor%}
+
+#port-group 1 speed 10000
+#port-group 2 speed 10000
+
+
+{% if vtep_name is defined and vtep_name %}
+ interface vxlan {{vtep_name}}
+ primary-ip {{ loopback0_ip.split('/')[0] }}
+{%endif%}
+
+

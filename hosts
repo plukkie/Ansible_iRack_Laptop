@@ -1,0 +1,20 @@
+sonic-SPINE-1 ansible_host=10.10.10.21
+sonic-SPINE-2 ansible_host=10.10.10.22
+sonic-LEAF-1 ansible_host=10.10.10.11
+sonic-LEAF-2 ansible_host=10.10.10.12
+sonic-LEAF-3 ansible_host=10.10.10.13
+sonic-LEAF-4 ansible_host=10.10.10.14
+
+[spine]
+sonic-SPINE-1
+sonic-SPINE-2
+
+[leaf]
+sonic-LEAF-1
+sonic-LEAF-2
+sonic-LEAF-3
+sonic-LEAF-4
+
+[all:children]
+spine
+leaf

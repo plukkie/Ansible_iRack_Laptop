@@ -1,0 +1,109 @@
+{% set vlanarray = [] -%}
+{% set vrfarray = [] -%}
+{% set l2interfacearray = [] -%}
+
+{% if myvars is defined -%}
+{% for vlan in myvars['vlandata'] -%}
+
+{% set obj = { 'vrf': '', 'vlan': '', 'ip4gw': '' } -%}
+
+{% if myvars['vlandata'][vlan]['hosts'] is defined and myvars['vlandata'][vlan]['hosts'] -%}
+{% for host in myvars['vlandata'][vlan]['hosts'] -%}
+{% if host is match inventory_hostname -%}
+
+{{ vlanarray.append(vlan) }}
+
+
+{% if myvars['vlandata'][vlan].vrf is defined and myvars['vlandata'][vlan].vrf -%}
+{{ obj.update({'vrf': myvars['vlandata'][vlan].vrf, 'vlan': "Vlan"+vlan|string}) }}
+{% endif -%}
+
+{% if myvars['vlandata'][vlan].net is defined and myvars['vlandata'][vlan].net -%}
+{% set x = myvars['vlandata'][vlan].net.split(".") -%}
+{% set y = x[0]+'.'+x[1]+'.'+x[2]+'.'+myvars['vlandata'][vlan].agw|string+'/'+myvars['vlandata'][vlan].mask|string -%}
+{{ obj.update({'ip4gw': y|string}) }}
+{{ vrfarray.append( obj ) }}
+{% endif -%}
+
+{% if myvars['vlandata'][vlan].desc is defined and myvars['vlandata'][vlan].desc -%}
+
+
+{% if myvars['vlandata'][vlan]['int_vlan_options'] is defined and myvars['vlandata'][vlan]['int_vlan_options'] -%}
+{% for option in myvars['vlandata'][vlan]['int_vlan_options'] -%}
+
+
+{% endfor -%}
+{% endif -%}
+{% endif -%}
+
+{% if myvars['vlandata'][vlan]['interfaces'] is defined and myvars['vlandata'][vlan]['interfaces'] -%}
+{{ l2interfacearray.append( {'vlan': vlan, 'ports': myvars['vlandata'][vlan]['interfaces']} ) }}
+{% for interface in myvars['vlandata'][vlan]['interfaces'] -%}
+{% endfor -%}
+{% endif -%}
+
+{% if myvars['vtep'] is defined and myvars.vtep -%}
+{% endif -%}
+
+{% endif -%}
+{% endfor -%}
+{% endif -%}
+
+{% endfor -%}
+{% endif -%}
+
+
+sonic_vlans:
+{% for vlanitem in vlanarray %}
+  - vlan_id: {{ vlanitem }}
+{% endfor %}
+
+sonic_l2_interfaces:
+{% for vlanl2obj in l2interfacearray %}
+{% set myvlan = vlanl2obj['vlan'] %}
+{% for vlanl2int in vlanl2obj['ports'] %}
+  - name: {{ vlanl2int }}
+    trunk:
+      allowed_vlans:
+        - vlan: {{ myvlan }}
+{% endfor %}
+{% endfor %}
+
+sonic_vrf_interfaces:
+{% for vlanvrfitem in vrfarray %}
+{% set myvrf = vlanvrfitem['vrf'] %}
+{% set myvlan = vlanvrfitem['vlan'] %}
+{% set my4gw = vlanvrfitem['ip4gw'] %}
+  - members:
+      interfaces:
+        - name: {{ myvlan }}
+    name: {{ myvrf }}
+{% endfor %}
+
+sonic_l3_interfaces:
+{% for vlanvrfitem in vrfarray %}
+{% set myvlan = vlanvrfitem['vlan'] %}
+{% set my4gw = vlanvrfitem['ip4gw'] %}
+  - ipv4:
+       anycast_addresses:
+          - {{ my4gw }}
+    name: {{ myvlan }}
+{% endfor %}
+
+sonic_vxlans:
+{% if myvars['vtep'] is defined and myvars.vtep %}
+  - name: {{ myvars['vtep'] }}
+    vlan_map:
+{% for vlanitem in vlanarray %}
+       - vlan: {{ vlanitem }}
+         vni: {{ vlanitem }}{{ vlanitem }}
+{% endfor %}
+{% endif %}
+
+sonic_config:
+  lines: []
+
+all_vnis:
+{% for vlanitem in vlanarray %}
+  - {{ vlanitem }}{{ vlanitem }}
+{% endfor %}

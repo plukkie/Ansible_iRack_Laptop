@@ -1,0 +1,55 @@
+---
+
+- import_playbook: create_rendered_files.yaml
+
+- hosts: leaf
+  connection: httpapi
+  gather_facts: false
+  collections:
+    - dellemc.enterprise_sonic
+
+
+  tasks: 
+  
+    - include_vars:
+         files_matching: "{{ inventory_hostname }}-vlanvars.yaml"
+         dir: rendered
+         name: vlans
+
+
+  #- name: Show yaml var for debug purpose
+  #   debug:
+  #     msg: "{{ myvars }}"
+
+
+    - name: Create vlans 
+      sonic_vlans:
+        config: '{{vlans.sonic_vlans}}'
+      when: sonic_vlans is defined and sonic_vlans
+
+    - name: Create L2 Interfaces with vlans
+      sonic_l2_interfaces:
+        config: '{{vlans.sonic_l2_interfaces}}'
+      when: sonic_l2_interfaces is defined and sonic_l2_interfaces
+
+    - name: Connect L3 interfaces into VRFs
+      sonic_vrfs:
+        config: '{{vlans.sonic_vrf_interfaces}}'
+      when: sonic_vrf_interfaces is defined and sonic_vrf_interfaces
+
+    - name: Create layer3 interfaces
+      sonic_l3_interfaces:
+        config: '{{vlans.sonic_l3_interfaces}}'
+      when: sonic_l3_interfaces is defined and sonic_l3_interfaces
+
+    - name: Create VXLAN mappings to vlans
+      sonic_vxlans:
+        config: '{{vlans.sonic_vxlans}}'
+      when: sonic_vxlans is defined and sonic_vxlans
+    
+    - name: Save config
+      vars:
+        ansible_connection: network_cli
+      sonic_config:
+        save: true
+

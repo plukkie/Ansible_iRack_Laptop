@@ -1,0 +1,119 @@
+- hosts: all
+  connection: httpapi
+  gather_facts: false
+  collections:
+    - dellemc.enterprise_sonic
+
+  pre_tasks:
+    - name: VRF Mgmt
+      vars:
+        ansible_connection: network_cli
+      sonic_config:
+        lines:
+          - ip vrf mgmt
+      register: result
+    - pause:
+        seconds: 40
+
+  tasks: 
+    - name: Push Configurations For Custom CLIs. pre
+      vars:
+        ansible_connection: network_cli
+      sonic_config:
+        src: fdc_clis_pre.j2
+      register: result
+
+    - name: Configure System
+      sonic_system:
+        config: '{{sonic_system}}'
+      when: sonic_system is defined and sonic_system
+
+    - name: Configure Port Breakouts
+      sonic_port_breakout:
+        config: '{{sonic_port_breakout}}'
+      when: sonic_port_breakout is defined and sonic_port_breakout
+    
+    - name: Create Vlans
+      sonic_vlans:
+        config: '{{sonic_vlans}}'
+      when: sonic_vlans is defined and sonic_vlans
+    
+    - name: Create LAG Interfaces
+      sonic_lag_interfaces:
+        config: '{{sonic_lag_interfaces}}'
+      when: sonic_lag_interfaces is defined and sonic_lag_interfaces
+    
+    - name: Create Interfaces
+      sonic_interfaces:
+        config: '{{sonic_interfaces}}'
+      when: sonic_interfaces is defined and sonic_interfaces
+    
+    - name: Create L2 Interfaces
+      sonic_l2_interfaces:
+        config: '{{sonic_l2_interfaces}}'
+      when: sonic_l2_interfaces is defined and sonic_l2_interfaces
+    
+    - name: Create VRF
+      sonic_vrfs:
+        config: '{{sonic_vrf_interfaces}}'
+      when: sonic_vrf_interfaces is defined and sonic_vrf_interfaces
+    
+    - name: Create L3 Interfaces
+      tags: tagged 
+      sonic_l3_interfaces:
+        config: '{{sonic_l3_interfaces}}'
+      when: sonic_l3_interfaces is defined and sonic_l3_interfaces
+    
+    - name: Create MCLAG
+      sonic_mclag:
+        config: '{{sonic_mclag}}'
+      when: sonic_mclag is defined and sonic_mclag
+    
+    - name: Create BGP Configuration
+      sonic_bgp:
+        config: '{{sonic_bgp}}'
+      when: sonic_bgp is defined and sonic_bgp
+    
+    - name: Create BGP AF Configuration
+      sonic_bgp_af:
+        config: '{{sonic_bgp_af}}'
+      when: sonic_bgp_af is defined and sonic_bgp_af
+    
+    - name: Create BGP Neighbors Configuration
+      sonic_bgp_neighbors:
+        config: '{{sonic_bgp_neighbors}}'
+      when: sonic_bgp_neighbors is defined and sonic_bgp_neighbors
+    
+    - name: Create BGP Neighbors AF Configuration
+      sonic_bgp_neighbors_af:
+        config: '{{sonic_bgp_neighbors_af}}'
+      when: sonic_bgp_neighbors_af is defined and sonic_bgp_neighbors_af
+    
+    - name: Create VXLANs
+      sonic_vxlans:
+        config: '{{sonic_vxlans}}'
+      when: sonic_vxlans is defined and sonic_vxlans
+
+    - name: Create TACACS configuration
+      sonic_tacacs_server:
+        config: '{{sonic_tacacs_server}}'
+      when: sonic_tacacs_server is defined and sonic_tacacs_server
+
+    - name: Create AAA configuration
+      sonic_aaa:
+        config: '{{sonic_aaa}}'
+      when: sonic_aaa is defined and sonic_aaa
+    
+    - name: Push Configurations For Custom CLIs
+      vars:
+        ansible_connection: network_cli
+      sonic_config:
+        src: fdc_clis.j2
+      register: result
+
+    - name: Save config
+      vars:
+        ansible_connection: network_cli
+      sonic_config:
+        save: no
+

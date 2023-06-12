@@ -1,0 +1,201 @@
+
+
+
+
+
+lacp_pcs:
+  - 10
+  
+mclag_member_pcs:
+  - lag: PortChannel10
+  
+  
+sonic_bgp:
+  - bestpath:
+      as_path:
+        multipath_relax: true
+    bgp_as: '{{ bgp_asn }}'
+    router_id: '{{ bgp_router_id }}'
+  - bgp_as: '{{bgp_asn}}'
+    vrf_name: Vrf1
+
+sonic_bgp_af:
+  - address_family:
+      afis:
+        - afi: ipv4
+          safi: unicast
+          max_path:
+            ebgp: 2
+          redistribute:
+            - protocol: connected
+        - afi: l2vpn
+          safi: evpn
+          advertise_all_vni: true
+    bgp_as: '{{bgp_asn}}'
+  - address_family:
+      afis:
+        - afi: l2vpn
+          safi: evpn
+          route_advertise_list:
+            - advertise_afi: ipv4
+        - afi: ipv4
+          safi: unicast
+          redistribute:
+            - protocol: connected
+    bgp_as: '{{ bgp_asn }}'
+    vrf_name: Vrf1
+
+sonic_bgp_neighbors:
+  - bgp_as: '{{bgp_asn}}'
+    peer_group:
+      - '{{sonic_bgp_spineleaf_peergroup}}'
+    neighbors:
+      - neighbor: Eth1/1
+        peer_group: spine-leaf
+      - neighbor: Eth1/5
+        peer_group: spine-leaf
+  - bgp_as: '{{bgp_asn}}'
+    neighbors:
+      - neighbor: 2.0.1.2
+        remote_as:
+          peer_as: 65000
+    vrf_name: Vrf1
+ 
+sonic_bgp_neighbors_af:
+  - bgp_as: '{{bgp_asn}}'
+    neighbors:
+      - address_family: '{{sonic_bgp_fabriclink_neighbors_aflist}}'
+        neighbor: Eth1/1
+      - address_family: '{{sonic_bgp_fabriclink_neighbors_aflist}}'
+        neighbor: Eth1/5
+  - bgp_as: '{{bgp_asn}}'
+    neighbors:
+      - address_family:
+          - activate: true
+            afi: ipv4
+            safi: unicast
+        neighbor: 2.0.1.2
+    vrf_name: Vrf1
+
+is_border_leaf: true
+
+sonic_config:
+  lines: []
+
+sonic_interfaces:
+  - description: 'VLTi link'
+    enabled: True
+    name: Eth1/3
+    mtu: 9216
+  - description: 'VLTi link'
+    enabled: True
+    name: Eth1/7
+    mtu: 9216
+  - description: 'Host0 link'
+    enabled: True
+    name: Eth1/4
+    mtu: 9216
+  - description: 'VLTi Portchannel'
+    enabled: True
+    name: PortChannel100
+    mtu: 9216
+  - description: 'Lag to Host'
+    enabled: True
+    name: PortChannel10
+    mtu: 9216
+  - description: 'Interlink'
+    enabled: True
+    name: Eth1/1
+    mtu: 9216
+  - description: 'Interlink'
+    enabled: True
+    name: Eth1/5
+    mtu: 9216
+  - description: 'Borderlink'
+    enabled: True
+    name: Eth1/2
+    mtu: 9216
+  - description: 'router-id'
+    name: '{{ loopback_inf0 }}'
+  - description: 'vtep'
+    name: '{{ loopback_inf1 }}'
+
+sonic_l2_interfaces:
+  - name: PortChannel100
+    trunk:
+      allowed_vlans:
+        - vlan: 60
+        - vlan: 999
+  - name: PortChannel10
+    trunk:
+      allowed_vlans:
+        - vlan: 60
+
+sonic_l3_interfaces:
+  - ipv6:
+      enabled: True
+    name: Eth1/1
+  - ipv6:
+      enabled: True
+    name: Eth1/5
+  - ipv4:
+      addresses:
+        - address: 2.0.1.3/31
+    name: Eth1/2
+  - ipv4:
+      addresses:
+        - address: '{{ loopback0_ip }}'
+    name: '{{ loopback_inf0 }}'
+  - ipv4:
+      addresses:
+        - address: '{{ loopback1_ip }}'
+    name: '{{ loopback_inf1 }}'
+
+sonic_lag_interfaces:
+  - members:
+      interfaces:
+        - member: Eth1/3
+        - member: Eth1/7
+    name: PortChannel100
+  - members:
+      interfaces:
+        - member: Eth1/4
+    name: PortChannel10
+
+sonic_system:
+  anycast_address:
+    ipv4: true
+    mac_address: '{{ anycast_mac_address }}'
+  hostname: sonic-LEAF-2
+  interface_naming: standard
+
+sonic_vlans:
+  - vlan_id: 60
+  - vlan_id: 999
+
+sonic_vrf_interfaces:
+  - members:
+      interfaces:
+        - name: Vlan60
+        - name: Vlan999
+        - name: Eth1/2
+    name: Vrf1
+
+sonic_vxlans:
+  - evpn_nvo: nvo1
+    name: vtep1
+    source_ip: '{{ loopback1_ip.split("/")[0] }}'
+    vlan_map:
+      - vlan: 999
+        vni: 999999
+      - vlan: 60
+        vni: 6060
+    vrf_map:
+      - vni: 6060
+        vrf: Vrf1
+
+vlans:
+  - 999
+
+vrfs:
+  - Vrf1

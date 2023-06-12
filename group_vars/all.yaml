@@ -1,0 +1,100 @@
+ansible_httpapi_use_ssl: true
+ansible_httpapi_validate_certs: false
+ansible_network_os: dellemc.enterprise_sonic.sonic
+ansible_password: YourPaSsWoRd
+ansible_user: admin
+bgp_asn: '{{ host_data[inventory_hostname].bgp_asn }}'
+bgp_router_id: '{{ host_data[inventory_hostname].bgp_router_id }}'
+dns_servers:
+  - 10.204.0.251
+mgmt_gateway_ip: '{{ host_data[inventory_hostname].mgmt_gateway_ip }}'
+mgmt_ip: '{{ host_data[inventory_hostname].mgmt_ip }}'
+loopback0_ip: '{{ host_data[inventory_hostname].loopback0_ip }}'
+loopback_inf0: Loopback0
+loopback_inf1: Loopback1
+ntp_servers:
+  - 10.204.9.254
+sonic_bgp_fabriclink_neighbors_aflist:
+  - activate: true
+    afi: ipv4
+    allowas_in:
+      value: 2
+    safi: unicast
+  - activate: true
+    afi: l2vpn
+    safi: evpn
+
+sonic_bgp_spineleaf_peergroup:
+  name: spine-leaf
+  address_family:
+    afis:
+      - activate: true
+        afi: ipv4
+        safi: unicast
+      - activate: true
+        afi: l2vpn
+        safi: evpn
+  advertisement_interval: 5
+  bfd:
+    enabled: true
+  capability:
+    extended_nexthop: true
+  remote_as:
+    peer_type: external
+  timers:
+    holdtime: 9
+    keepalive: 3
+
+vlan_info:
+  60:
+    vni: 6060
+    vrf: Vrf1
+  999:
+    anycast_gateway_ip: 172.16.0.254/24
+    neigh_suppress: true
+    vni: 999999
+    vrf: Vrf1
+
+host_data:
+  sonic-SPINE-1:
+     bgp_asn: 65001
+     bgp_router_id: 10.0.1.1
+     loopback0_ip: 10.0.1.1/32
+     mclag_peer_ip: 10.0.1.2
+  sonic-SPINE-2:
+     bgp_asn: 65001
+     bgp_router_id: 10.0.1.2
+     loopback0_ip: 10.0.1.2/32
+     mclag_peer_ip: 10.0.1.1
+  sonic-LEAF-1:
+     bgp_asn: 65501
+     bgp_router_id: 10.0.2.1
+     loopback0_ip: 10.0.2.1/32
+     ipdhcp_loopback_ip: 192.168.0.1/32
+     loopback1_ip: 10.10.10.1/32
+     mclag_peer_ip: 10.0.2.2
+     vtep_name: vtep1
+  sonic-LEAF-2:
+     bgp_asn: 65501
+     bgp_router_id: 10.0.2.2
+     loopback0_ip: 10.0.2.2/32
+     ipdhcp_loopback_ip: 192.168.0.2/32
+     loopback1_ip: 10.10.10.1/32
+     mclag_peer_ip: 10.0.2.1
+     vtep_name: vtep1
+  sonic-LEAF-3:
+     bgp_asn: 65502
+     bgp_router_id: 10.0.2.3
+     loopback0_ip: 10.0.2.3/32
+     ipdhcp_loopback_ip: 192.168.0.3/32
+     loopback1_ip: 10.10.10.2/32
+     mclag_peer_ip: 10.0.2.4
+     vtep_name: vtep3
+  sonic-LEAF-4:
+     bgp_asn: 65502
+     bgp_router_id: 10.0.2.4
+     loopback0_ip: 10.0.2.4/32
+     ipdhcp_loopback_ip: 192.168.0.4/32
+     loopback1_ip: 10.10.10.2/32
+     mclag_peer_ip: 10.0.2.3
+     vtep_name: vtep3

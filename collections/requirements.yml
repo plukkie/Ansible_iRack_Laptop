@@ -1,0 +1,5 @@
+---
+collections:
+  - source: https://github.com/ansible-collections/dellemc.enterprise_sonic.git
+    type: git
+

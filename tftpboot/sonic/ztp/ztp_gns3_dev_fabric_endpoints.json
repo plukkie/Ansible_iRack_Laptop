@@ -1,0 +1,24 @@
+{
+   "ztp":{
+
+      "configdb-json": {
+         "dynamic-url": {
+            "source": {
+	       "prefix" : "http://10.10.10.201/tftpboot/sonic/config/",
+	       "identifier" : "hostname",
+	       "suffix" : "_config_gns3.json"
+	    },
+            "destination": "/etc/sonic/config_db.json",
+            "secure": false
+         },
+         "clear-config" : false
+      },
+      "provisioning-script": {
+          "plugin": {
+            "url":"http://10.10.10.201/tftpboot/sonic/postscript/postscript_gns3_dev_fabric_endpoints.sh"
+           },
+           "reboot-on-success": false
+      }
+   }
+}
+

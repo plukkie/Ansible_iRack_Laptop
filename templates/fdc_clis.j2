@@ -1,0 +1,153 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+{#######################################
+
+#Purpose:
+Custom configuration for SONiC devices
+
+#######################################}
+{#######################################
+{%if intfs is defined and intfs%}
+  {%for intf in intfs%}
+interface {{intf.name}}
+    {%if intf.ipv6_enabled is defined and intf.ipv6_enabled%}
+  ipv6 enable
+    {%endif%}
+  {%endfor%}
+{%endif%}
+#######################################}
+
+
+{# ntp server start #}
+{%if ntp_servers is defined and ntp_servers%}
+ntp vrf mgmt
+  {%for ntp_server in ntp_servers%}
+ntp server {{ntp_server}}
+  {%endfor%}
+{%endif%}
+{# ntp server end #}
+
+{#snmp server start#}
+{%if snmp_server is defined and snmp_server%}
+snmp-server contact {{snmp_server.contact}}
+snmp-server community {{snmp_server.community}}
+snmp-server enable trap
+  {%for host in snmp_server.hosts%}
+snmp-server host {{host.host_ip}} community {{host.community_str}} port {{host.udp_port}}
+  {%endfor%}
+{%endif%}
+{#snmp server end#}
+
+{# logging server start #}
+{%if logging_servers is defined and logging_servers%}
+  {%for logging_server in logging_servers%}
+logging server {{logging_server.name}}{%if logging_server.port and logging_server.port > 0%} remote-port {{logging_server.port}}{%endif%} vrf mgmt
+
+  {%endfor%}
+{%endif%}
+{# logging server end #}
+
+{# DNS server start #}
+{%if dns_servers is defined and dns_servers%}
+  {%for dns_server in dns_servers%}
+ip name-server {{dns_server}} vrf mgmt
+  {%endfor%}
+{%endif%}
+{# DNS server end #}
+
+{#following interface mclag is inactive block, as resource module is available for mclag #}
+{% if sonic_mclag_cli is defined and sonic_mclag_cli %}
+mclag domain {{ sonic_mclag_cli.domain }}
+ peer-link {{ sonic_mclag_cli.peer_link }}
+ source-ip {{ sonic_mclag_cli.source_ip }}
+ peer-ip {{ sonic_mclag_cli.peer_ip }}
+{% endif %}
+
+{#following interface anycast_mac_address is inactive block, as resource module is available for anycast_mac_address #}
+{%if anycast_mac_address is defined and anycast_mac_address %}
+ip anycast-address enable
+ip anycast-mac-address {{anycast_mac_address}}
+{%endif%}
+
+{%if ipdhcp is defined and ipdhcp%}
+interface Loopback {{ipdhcp.source_lb_interface}}
+{%if ipdhcp.vrf_name is defined and ipdhcp.vrf_name%} ip vrf forwarding {{ipdhcp.vrf_name}}
+{%endif%}
+ ip address {{ipdhcp_loopback_ip}}
+{%endif%}
+
+{%if vlans is defined and vlans%}
+  {%for vlan in vlans%}
+interface Vlan {{vlan}}
+{%if vlan_info[vlan].anycast_gateway_ip is defined and vlan_info[vlan].anycast_gateway_ip%}
+ ip anycast-address {{vlan_info[vlan].anycast_gateway_ip}}
+{%endif%}
+{%if vlan_info[vlan].neigh_suppress is defined and vlan_info[vlan].neigh_suppress %}  neigh-suppress
+{%endif%}
+{%if ipdhcp is defined and ipdhcp %}
+{%for dhcp in ipdhcp.dhcp %}
+	{%if ipdhcp.dhcp is defined and ipdhcp.dhcp%}
+		ip dhcp-relay {{dhcp}} {%if ipdhcp.vrf_name is defined and ipdhcp.vrf_name%}vrf-name {{ipdhcp.vrf_name}} {%endif%}
+	{%endif%}
+{%endfor%}
+{%if ipdhcp.dhcp is defined and ipdhcp.dhcp%}
+	ip dhcp-relay max-hop-count {{ipdhcp.max_hop_count}}
+	ip dhcp-relay source-interface Loopback{{ipdhcp.source_lb_interface}}
+	ip dhcp-relay link-select
+{%endif%}
+{%endif%}
+
+{# currently vrrp is not used. To enabe make .vrrp1 to .vrrp#}
+{%if vlan_info[vlan].vrrp1 is defined and vlan_info[vlan].vrrp%}
+vrrp {{vlan_info[vlan].vrrp.id}} address-family ipv4
+vip {{vlan_info[vlan].vrrp.vip}}
+priority {{vrrp_priority}}
+exit
+{%endif%}
+
+exit
+  {%endfor%}
+{%endif%}
+
+{%if ip_route is defined and ip_route %}
+ip route {%if vrf is defined and vrf %}vrf {{vrf}}{%endif%} 0.0.0.0/0 {{ip_route}}
+{%endif%}
+
+{#following interface vxlan is inactive block, as resource module is available for vxlan #}
+{%if vtep_name1 is defined and vtep_name1%}
+interface vxlan {{vtep_name}}
+  source-ip {{ loopback1_ip.split('/')[0] }}
+  {%for vlan in vlans%}
+  map vni {{vlan_info[vlan].vni}} vlan {{vlan}} 
+  {%endfor%}
+  {%for vlan in vlans%}
+  {%if vlan_info[vlan].anycast_gateway_ip is not defined or vlan_info[vlan].anycast_gateway_ip == None%}  map vni {{vlan_info[vlan].vni}} vrf {{vlan_info[vlan].vrf}}{%endif%}
+  {%endfor%}
+{%endif%}
+
+{#tacacs configuration #}
+{%if tacacs is defined and tacacs %}
+{%if tacacs.hosts%}{%for host in tacacs.hosts%}
+tacacs-server host {{host.name}} vrf mgmt key {{host.key}} port {{host.port}} timeout {{host.timeout}} priority {{host.priority}} 
+{%endfor%}{%endif%}
+{%endif%}
+{# end of tacacs configuration #}
+
+{# Add peer-ip for VTEP loadbalancing #}
+{%if host_data[inventory_hostname].mclag_peer_ip is defined and host_data[inventory_hostname].mclag_peer_ip %}
+		router bgp {{ bgp_asn }}
+		address-family l2vpn evpn
+		advertise-pip peer-ip {{ host_data[inventory_hostname].mclag_peer_ip }}
+{%endif%}
+
+{# Allow own AS in from MCLAG neighbor #}
+{%if sonic_bgp_spineleaf_peergroup.address_family.afis is defined and sonic_bgp_spineleaf_peergroup.address_family.afis %}
+	{% for afi in sonic_bgp_spineleaf_peergroup.address_family.afis %}
+		{%if afi.afi == 'ipv4' %}
+			router bgp {{ bgp_asn }}
+			peer-group {{ sonic_bgp_spineleaf_peergroup.name }}
+			address-family {{ afi.afi }} unicast
+			allowas-in 1
+		{%endif%}
+	{%endfor%}
+{%endif%}
+

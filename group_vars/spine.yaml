@@ -1,0 +1,10 @@
+sonic_bgp_af:
+  - address_family:
+      afis:
+        - afi: ipv4
+          max_path:
+            ebgp: 2
+          redistribute:
+            - protocol: connected
+          safi: unicast
+    bgp_as: '{{bgp_asn}}'

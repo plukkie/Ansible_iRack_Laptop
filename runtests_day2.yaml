@@ -1,0 +1,75 @@
+---
+
+- import_playbook: create_rendered_files.yaml
+
+- hosts: leaf
+  connection: httpapi
+  gather_facts: false
+  collections:
+    - dellemc.enterprise_sonic
+
+
+  tasks: 
+
+    - include_vars:
+         files_matching: "{{ inventory_hostname }}-vlanvars.yaml"
+         dir: rendered
+         name: vnis
+
+
+         #- name: Read group_vars/all.yml, count total leafs...
+         #set_fact:
+         #groupalldata: "{{lookup('file', 'group_vars/all.yaml') }}"
+      
+         #vars:
+         #leafcount: "{{ groupalldata | regex_findall('vtep_name') | length }}"
+
+
+    - name: Collecting VNIs [sh evpn vni <vni>]...
+      vars:
+        ansible_connection: network_cli
+      any_errors_fatal: true
+      sonic_command:
+        commands:
+          - show evpn vni {{ item }} 
+
+            #wait_for:
+            #- result[0] contains "Client State: Up"
+
+      loop:
+        "{{ vnis.all_vnis }}"
+
+      register: vni_log
+      
+
+    - name: Checking logs for failures...
+     
+      debug:
+        msg: 'OK'
+
+      any_errors_fatal: true
+
+      failed_when:
+        - item.stdout is regex('^.*(VNI.*does not exist, or is an L3-VNI).*$', ignorecase=true)
+
+      loop:
+        "{{ vni_log.results }}"
+
+
+        #- name: Valid operational state
+        #vars:
+        #tunnelcount: "{{ vxlan_log.stdout_lines[0] | regex_findall('oper_up') | length }}"
+
+        #debug:
+        # msg: "Vtep tunnels are 'oper_up' and in sync with all leafs ({{leafcount}}"
+        #when: (leafcount-1|int == tunnelcount|int)
+      #failed_when: (leafcount-1|int != tunnelcount|int)
+
+        #- name: Invalid operational state
+        #vars:
+        #tunnelcount: "{{ vxlan_log.stdout_lines[0] | regex_findall('oper_up') | length }}"
+
+        #fail:
+        #msg: "FAIL: Not all Vtep tunnels ({{ tunnelcount }}) detected. Config fault or switch down?"
+        #when: (leafcount-1|int != tunnelcount|int)
+

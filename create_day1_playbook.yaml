@@ -1,0 +1,107 @@
+---
+
+- hosts: all
+  connection: httpapi
+  gather_facts: false
+  collections:
+    - dellemc.enterprise_sonic
+
+  vars:
+    jenkinsgit: https://github.com/plukkie/Jenkins_CICD_Pipeline_SONiC_Fabric_Laptop.git
+    jenkinsdir: ./jenkinsgit
+    settingsfile: settings.json
+    host_vars_dir: host_vars
+    group_vars_dir: group_vars
+    inventoryfile: hosts
+
+
+  tasks: 
+  
+    - name: Fetch Git {{ jenkinsgit }}
+      delegate_to: localhost
+      run_once: true
+      git:
+        repo: "{{ jenkinsgit }}"
+        dest: "{{ jenkinsdir }}"
+
+        #- name: Create inventory file
+        #delegate_to: localhost
+
+
+    - name: Display JSON {{ settingsfile }}
+      delegate_to: localhost
+      run_once: true
+      shell: cat {{ jenkinsdir }}"/"{{ settingsfile }}
+      register: settingsobj
+
+
+    - name: Store JSON data to variable
+      delegate_to: localhost
+      run_once: true
+      set_fact:
+        jsonobj: "{{ settingsobj.stdout | from_json }}"
+
+    #- debug:
+    #    msg: "{{ jsonobj }}"
+
+    - name: Construct host yaml files in '{{ host_vars_dir }}/*'
+      delegate_to: localhost
+      template:
+        src: templates/create_fabric_hostvar_files.j2
+        dest: "{{ host_vars_dir }}/{{ inventory_hostname }}.yaml"
+
+    - name: Construct {{ group_vars_dir }}/leaf.yaml
+      delegate_to: localhost
+      run_once: true
+      template:
+        src: templates/create_fabric_leaf.j2
+        dest: "{{ group_vars_dir }}/leaf.yaml"
+
+    - name: Construct {{ group_vars_dir }}/spine.yaml
+      delegate_to: localhost
+      run_once: true
+      template:
+        src: templates/create_fabric_spine.j2
+        dest: "{{ group_vars_dir }}/spine.yaml"
+
+    - name: Construct {{ group_vars_dir }}/ temp files
+      delegate_to: localhost
+      template:
+        src: templates/create_fabric_all_temp.j2
+        dest: "{{ group_vars_dir }}/{{inventory_hostname}}.yaml.tmp"
+
+    - name: Delete  {{ group_vars_dir }}/all.yaml
+      delegate_to: localhost
+      run_once: true
+      file:
+         path: "{{ group_vars_dir }}/all.yaml"
+         state: absent
+
+    - name: Construct base '{{ group_vars_dir }}/all.yaml'
+      delegate_to: localhost
+      run_once: true
+      template:
+        src: templates/create_fabric_all_base.j2
+        dest: "{{ group_vars_dir }}/all.yaml"
+
+    - name: Merge all temp files into {{ group_vars_dir }}/all.yaml
+      delegate_to: localhost
+      shell: cat {{group_vars_dir}}/{{inventory_hostname}}.yaml.tmp >> {{ group_vars_dir }}/all.yaml
+      #loop: "{{ lookup('fileglob', '{{group_vars_dir}}/{{inventory_hostname}}.yaml.tmp', wantlist=True) }}"
+
+    - name: Delete temp files in  {{ group_vars_dir }}/
+      delegate_to: localhost
+      file:
+        path: '{{group_vars_dir}}/{{inventory_hostname}}.yaml.tmp'
+        state: absent
+
+
+
+        #- name: Save config
+        #vars:
+        #ansible_connection: network_cli
+        #sonic_config:
+        #save: no
+
+
+

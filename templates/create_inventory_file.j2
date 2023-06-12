@@ -1,0 +1,59 @@
+{% set conf = jsonobj -%}
+{% set defaultarray = "10.20.30.1".split(".") -%}
+{% set spinearray = [] -%}
+{% set leafarray = [] -%}
+
+{% if conf['fabric']['common']['oobmgtstart'] is defined and conf['fabric']['common']['oobmgtstart'] %}
+{% set oobarray = conf['fabric']['common']['oobmgtstart'].split(".") %}
+{% set net = oobarray[0]+'.'+oobarray[1]+'.'+oobarray[2] %}
+{% set mgthostip = oobarray[3] %}
+{% else %}
+{% set net = defaultarray[0]+'.'+defaultarray[1]+'.'+defaultarray[2] %}
+{% set mgthostip = defaultarray[3] %}
+{% endif -%}
+
+{% set leafs = conf['gns3']['nodesdata']['templates']['leaf']['count'] %}
+{% set spines = conf['gns3']['nodesdata']['templates']['spine']['count'] %}
+{% set leafprefix = conf['fabric']['leaf']['nameprefix'] %}
+{% set spineprefix = conf['fabric']['spine']['nameprefix'] -%}
+
+{% for counter in range(2) -%}
+
+{% if counter == 0 %}
+{% set cnt = spines %}
+{% set np = spineprefix %}
+{% set ip = mgthostip %}
+{% elif counter == 1 %}
+{% set cnt = leafs %}
+{% set np = leafprefix %}
+{% set ip = mgthostip|int+spines %}
+{% endif -%}
+
+{% for i in range(cnt) -%}
+{% set switchnr = i+1 %}
+{% set switchname = np+switchnr|string %}
+{% set switchip = ip|int + i -%} 
+{{ switchname }} ansible_host={{ net }}.{{ switchip }}
+{% if counter == 0 %}
+{{ spinearray.append( switchname ) -}}
+{% elif counter == 1 %}
+{{ leafarray.append( switchname ) -}}
+{% endif %}
+{% endfor -%}
+
+{% endfor %}
+
+[spine]
+{% for s in spinearray %}
+{{ s }}
+{% endfor %}
+
+[leaf]
+{% for l in leafarray %}
+{{ l }}
+{% endfor %}
+
+[all:children]
+spine
+leaf
+

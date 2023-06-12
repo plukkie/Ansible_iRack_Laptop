@@ -1,0 +1,13 @@
+{% set vrf = jsonobj['fabric']['common']['L3VRF'] -%}
+{% set vlti_pc = 'Portchannel'+jsonobj['fabric']['leaf']['vlti-Portchannel']|string -%}
+
+sonic_bgp_af:
+  - address_family:
+      afis:
+        - afi: ipv4
+          max_path:
+            ebgp: 2
+          redistribute:
+            - protocol: connected
+          safi: unicast
+    bgp_as: '{{ '{{bgp_asn}}' }}'

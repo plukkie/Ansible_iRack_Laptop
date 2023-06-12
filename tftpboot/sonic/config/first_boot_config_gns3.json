@@ -1,0 +1,52 @@
+{
+    "MGMT_PORT": {
+        "eth0": {
+            "admin_status": "up",
+            "autoneg": "true",
+            "description": "dhcp managed interface",
+            "mtu": "1500",
+            "speed": "1000"
+        }
+    },
+    "DEVICE_METADATA": {
+        "localhost": {
+            "hostname": "SONiC-ztp-staged"
+        }
+    },
+    "COREDUMP": {
+        "config": {
+            "enabled": "true"
+        }
+    }, 
+    "VRF": {
+        "default": {
+            "enabled": "true"
+        }
+    },
+     "NTP_SERVER": {
+        "10.204.11.135": {
+            "minpoll": "6",
+            "maxpoll": "10"
+        }
+    },
+    "MGMT_VRF_CONFIG": {
+        "vrf_global": {
+            "mgmtVrfEnabled": "false"
+        }
+    },
+    "SSH_SERVER_VRF": {
+        "default": {
+            "port": "22"
+        }
+    },
+    "SWITCH": {
+        "switch": {
+            "fdb_aging_time": "600"
+        }
+    },
+    "CLOCK": {
+        "system": {
+            "timezone_name": "Europe/Amsterdam"
+        }
+    }
+}
