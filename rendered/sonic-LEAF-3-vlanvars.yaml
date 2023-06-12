@@ -1,0 +1,151 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+sonic_vlans:
+  - vlan_id: 501
+  - vlan_id: 502
+  - vlan_id: 503
+  - vlan_id: 504
+  - vlan_id: 512
+
+sonic_l2_interfaces:
+  - name: Portchannel 10
+    trunk:
+      allowed_vlans:
+        - vlan: 501
+  - name: Portchannel 100
+    trunk:
+      allowed_vlans:
+        - vlan: 501
+  - name: Portchannel 10
+    trunk:
+      allowed_vlans:
+        - vlan: 502
+  - name: Portchannel 100
+    trunk:
+      allowed_vlans:
+        - vlan: 502
+  - name: Portchannel 10
+    trunk:
+      allowed_vlans:
+        - vlan: 503
+  - name: Portchannel 100
+    trunk:
+      allowed_vlans:
+        - vlan: 503
+  - name: Portchannel 10
+    trunk:
+      allowed_vlans:
+        - vlan: 504
+  - name: Portchannel 100
+    trunk:
+      allowed_vlans:
+        - vlan: 504
+  - name: Portchannel 10
+    trunk:
+      allowed_vlans:
+        - vlan: 512
+  - name: Portchannel 100
+    trunk:
+      allowed_vlans:
+        - vlan: 512
+
+sonic_vrf_interfaces:
+  - members:
+      interfaces:
+        - name: Vlan501
+    name: Vrf1
+  - members:
+      interfaces:
+        - name: Vlan502
+    name: Vrf1
+  - members:
+      interfaces:
+        - name: Vlan503
+    name: Vrf1
+  - members:
+      interfaces:
+        - name: Vlan504
+    name: Vrf504
+  - members:
+      interfaces:
+        - name: Vlan512
+    name: Vrf1
+
+sonic_l3_interfaces:
+  - ipv4:
+       anycast_addresses:
+          - 192.168.101.254/24
+    name: Vlan501
+  - ipv4:
+       anycast_addresses:
+          - 192.168.102.254/24
+    name: Vlan502
+  - ipv4:
+       anycast_addresses:
+          - 192.168.103.254/24
+    name: Vlan503
+  - ipv4:
+       anycast_addresses:
+          - 192.168.104.254/24
+    name: Vlan504
+  - ipv4:
+       anycast_addresses:
+          - 192.168.112.254/24
+    name: Vlan512
+
+sonic_vxlans:
+  - name: vtep3
+    vlan_map:
+       - vlan: 501
+         vni: 501501
+       - vlan: 502
+         vni: 502502
+       - vlan: 503
+         vni: 503503
+       - vlan: 504
+         vni: 504504
+       - vlan: 512
+         vni: 512512
+
+sonic_config:
+  lines: []
+
+all_vnis:
+  - 501501
+  - 502502
+  - 503503
+  - 504504
+  - 512512

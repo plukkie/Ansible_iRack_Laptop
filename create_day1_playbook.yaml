@@ -7,7 +7,7 @@
     - dellemc.enterprise_sonic
 
   vars:
-    jenkinsgit: https://github.com/plukkie/Jenkins_CICD_Pipeline_SONiC_Fabric_Laptop.git
+    jenkinsgit: https://github.com/plukkie/Jenkins_CICD_iRack_Laptop.git
     jenkinsdir: ./jenkinsgit
     settingsfile: settings.json
     host_vars_dir: host_vars
