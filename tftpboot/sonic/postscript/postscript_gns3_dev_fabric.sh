@@ -45,17 +45,17 @@ for ITEM in ${PASSWORDLIST[@]}; do
         curl -s -k -X PATCH "https://localhost/restconf/data/openconfig-system:system/config/hostname" -H "accept: */*" -H "Content-Type: application/yang-data+json" -u ${USER_NAME}:${ITEM} -d "{\"openconfig-system:hostname\":\"$SWITCHNAME\"}"
 done
 
+# get enable_interfaces addon script
+/usr/bin/curl -s ${APP}${ZTD_SERVER_IP}${ADDON_SCRIPTS_PATH}${ENABLE_INTERFACES} -o ${ADMIN_HOME}${ENABLE_INTERFACES}
+sleep 2
+chmod a+x ${ADMIN_HOME}${ENABLE_INTERFACES} && ${ADMIN_HOME}${ENABLE_INTERFACES}
+
 sleep 2
 
 # get save_config.sh addon script and add to crontab
 /usr/bin/curl -s ${APP}${ZTD_SERVER_IP}${ADDON_SCRIPTS_PATH}${SAVE_CONFIG_FILE} -o ${ADMIN_HOME}${SAVE_CONFIG_FILE}
 sleep 2
 chmod a+x ${ADMIN_HOME}${SAVE_CONFIG_FILE}
-
-# get enable_interfaces addon script
-/usr/bin/curl -s ${APP}${ZTD_SERVER_IP}${ADDON_SCRIPTS_PATH}${ENABLE_INTERFACES} -o ${ADMIN_HOME}${ENABLE_INTERFACES}
-sleep 2
-chmod a+x ${ADMIN_HOME}${ENABLE_INTERFACES} && ${ADMIN_HOME}${ENABLE_INTERFACES}
 
 # Check if save_config script present in crontab
 if [[ ! -f "${CRONROOT}" ]]; then touch ${CRONROOT}; fi
