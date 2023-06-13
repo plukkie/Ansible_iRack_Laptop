@@ -5,7 +5,7 @@
 # LLDP will discover all neighbors and endpoints connected to the switch
 ##########################################################################
 
-intstart="1"
+intstart="0"
 intstop="47"
 intstep="1"
 intprefix="Ethernet"
