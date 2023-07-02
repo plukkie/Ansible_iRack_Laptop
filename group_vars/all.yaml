@@ -13,7 +13,7 @@ loopback0_ip: '{{ host_data[inventory_hostname].loopback0_ip }}'
 loopback_inf0: Loopback0
 loopback_inf1: Loopback1
 ntp_servers:
-  - 10.204.9.254
+  - 10.10.10.201
 sonic_bgp_fabriclink_neighbors_aflist:
   - activate: true
     afi: ipv4

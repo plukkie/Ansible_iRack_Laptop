@@ -9,4 +9,4 @@ do
     args=$args" $arg"
 done
 
-ansible-playbook -i hosts $args playbook.yaml 
+ansible-playbook -i hosts $args 
